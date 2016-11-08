@@ -3,13 +3,13 @@ What would Dante have said about the weather today?
 The service retrieves IP geolocation data, a weather report and matches with quotes from Divina Comedia. Because why not?
 
 ## Written by
-Björn Westerberg Nauclér (mail@bnaucler.se)
+Björn Westerberg Nauclér (mail@bnaucler.se)  
 Hazel Oosterhof (hazel@studiofenix.nl)
 
 ## Thanks to
-Dante Alighieri
-Jessie Frazelle
-The BoltDB team
+Dante Alighieri  
+Jessie Frazelle  
+The BoltDB team  
 Google
 
 # Where is the service running?
