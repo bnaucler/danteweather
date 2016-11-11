@@ -9,6 +9,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"bufio"
 	"unicode"
 	"strconv"
 	"encoding/json"
@@ -80,11 +82,14 @@ func rtext(prompt string) ([]byte) {
 	var sbuf string
 	var bbuf string
 
+	scanner := bufio.NewScanner(os.Stdin)
+
 	fmt.Println(prompt)
 
 	for {
 		sbuf = ""
-		fmt.Scanln(&sbuf)
+		scanner.Scan()
+		sbuf = scanner.Text()
 		if sbuf != "EOF" {
 			if len(bbuf) == 0 {
 				bbuf = sbuf
@@ -98,7 +103,7 @@ func rtext(prompt string) ([]byte) {
 
 func main() {
 
-	cbuc := []byte("bucket")
+	cbuc := []byte("quotes")
 	dbname := "./dante.db"
 	cquote := quote{}
 	rquote := quote{}

@@ -42,7 +42,7 @@ func dbdump (db *bolt.DB, cbuc []byte, rquote quote) {
 
 func main() {
 
-	cbuc := []byte("bucket")
+	cbuc := []byte("quotes")
 	dbname := "./dante.db"
 	rquote := quote{}
 

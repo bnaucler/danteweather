@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	// "strings"
+	"time"
 	"net/http"
 	"encoding/json"
 	"github.com/jessfraz/weather/forecast"
@@ -19,7 +19,11 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-var	cbuc = []byte("bucket")
+var (
+	dbname = string("./dante.db")
+	qbuc = []byte("quotes")
+	lbuc = []byte("visitors")
+)
 
 func cherr(e error) {
 	if e != nil { panic(e) }
@@ -28,6 +32,13 @@ func cherr(e error) {
 type Wraw struct { temp, hum, pres, ws, pint, pprob float64 }
 
 type Wconv struct { Temp, WS, Pint, Pprob int }
+
+type Log struct {
+	Ltime time.Time
+	Lwtr Wraw
+	Lloc string
+	Lquote string
+}
 
 type quote struct {
 	TempMin, TempMax int
@@ -74,8 +85,6 @@ func getwtr(ip string) (cloc string, cwtr Wraw) {
 
 func wtrconv(cwtr Wraw) (conv Wconv) {
 
-	log.Printf("DEBUG: opening wtrconv")
-
 	conv.Temp = int(cwtr.temp + 40)
 	if conv.Temp < 0 { conv.Temp = 0 }
 	if conv.Temp > 99 { conv.Temp = 99 }
@@ -92,7 +101,6 @@ func wtrconv(cwtr Wraw) (conv Wconv) {
 	if conv.Pprob < 0 { conv.Pprob = 0 }
 	if conv.Pprob > 99 { conv.Pprob = 99 }
 
-	log.Printf("DEBUG: closing wtrconv")
 	log.Printf("DEBUG: converted values: %+v", conv)
 
 	return
@@ -119,22 +127,21 @@ func caldiff(cquote quote, cwtrc Wconv) (diff int) {
 	return
 }
 
-func searchdb (db *bolt.DB, cwtr Wraw, rquote quote) (string) {
+func searchdb (db *bolt.DB, cwtr Wconv, rquote quote) (string) {
 
-	curr := wtrconv(cwtr)
 	tquote := quote{}
 	mspec := 999
 	mdiff := 999
 
 	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(cbuc)
+		b := tx.Bucket(qbuc)
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			json.Unmarshal(v, &tquote)
 			if tquote.Spec < mspec {
-				if verquote(tquote, curr) {
-					cdiff := caldiff(tquote, curr)
+				if verquote(tquote, cwtr) {
+					cdiff := caldiff(tquote, cwtr)
 					if cdiff < mdiff {
 						rquote = tquote
 						mspec = tquote.Spec
@@ -150,33 +157,93 @@ func searchdb (db *bolt.DB, cwtr Wraw, rquote quote) (string) {
 	return rquote.Text
 }
 
+func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
+
+	etime = etime.Add(-10 * time.Minute)
+	clog := Log{}
+
+	err := db.View(func(tx *bolt.Tx) error {
+		buc := tx.Bucket(lbuc)
+		if buc == nil { return fmt.Errorf("No bucket!") }
+
+		v := buc.Get(k)
+		json.Unmarshal(v, &clog)
+		return nil
+	})
+
+	log.Printf("DEBUG: ctime: %v", etime)
+	log.Printf("DEBUG: clog.Ltime: %v", clog.Ltime)
+
+	if clog.Ltime.Before(etime) {
+		return Log{}, err
+	} else {
+		return clog, err
+	}
+}
+
+func wrlog(db *bolt.DB, k, v []byte) (err error) {
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		buc, err := tx.CreateBucketIfNotExists(lbuc)
+		if err != nil { return err }
+
+		err = buc.Put(k, v)
+		if err != nil { return err }
+
+		return nil
+	})
+	return
+}
+
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	rquote := quote{}
+
+	var (
+		cloc string
+		quote string
+		rwtr Wraw
+		cwtr Wconv
+	)
 
 	log.Printf("Requested path: %v\n", r.URL.Path)
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	if(ip == "10.0.0.20") { ip = "77.249.219.212" }
 
-	cloc, cwtr := getwtr(ip)
+	// Check database for hit on IP Within time range
+	now := time.Now()
+	clog, err := searchlog(db, []byte(ip), now)
 
-	log.Printf("Remote host: %v\t%v\n", ip, cloc)
+	if len(clog.Lquote) == 0 || err != nil {
+		cloc, rwtr = getwtr(ip)
+		cwtr = wtrconv(rwtr)
+		quote = searchdb(db, cwtr, rquote)
+		wlog := Log{now, rwtr, cloc, quote}
+		v, err:= json.Marshal(wlog)
+		cherr(err)
+		err = wrlog(db, []byte(ip), v)
+		cherr(err)
+		log.Printf("DEBUG: Serving %v with new data\n", string(ip))
+	} else {
+		cloc = clog.Lloc
+		rwtr = clog.Lwtr
+		quote = clog.Lquote
+		log.Printf("DEBUG: Serving %v with data from database\n", string(ip))
+	}
 
-	quote := searchdb(db, cwtr, rquote)
-	fmt.Fprintf(w, "Weather for your location according to Dante:\n%s\n", quote)
+	fmt.Fprintf(w, "Weather for your location according to Dante:\n%s\n", 
+	quote)
 
 	fmt.Fprintf(w, "In other words: weather for %v\n", cloc)
-	fmt.Fprintf(w, "Temperature: %.2f\n", cwtr.temp)
-	fmt.Fprintf(w, "Humidity: %.2f\n", cwtr.hum)
-	fmt.Fprintf(w, "Pressure: %.2f\n", cwtr.pres)
-	fmt.Fprintf(w, "Wind speed: %.2f\n", cwtr.ws)
-	fmt.Fprintf(w, "Precipitation intensity: %.5f\n", cwtr.pint)
-	fmt.Fprintf(w, "Precipitation probability: %.2f\n", cwtr.pprob)
+	fmt.Fprintf(w, "Temperature: %.2f\n", rwtr.temp)
+	fmt.Fprintf(w, "Humidity: %.2f\n", rwtr.hum)
+	fmt.Fprintf(w, "Pressure: %.2f\n", rwtr.pres)
+	fmt.Fprintf(w, "Wind speed: %.2f\n", rwtr.ws)
+	fmt.Fprintf(w, "Precipitation intensity: %.5f\n", rwtr.pint)
+	fmt.Fprintf(w, "Precipitation probability: %.2f\n", rwtr.pprob)
 }
 
 func main() {
-
-	dbname := "./dante.db"
 
 	db, err := bolt.Open(dbname, 0640, nil)
 	cherr(err)
