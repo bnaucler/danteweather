@@ -169,20 +169,6 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 	}
 }
 
-func wrlog(db *bolt.DB, k, v []byte) (err error) {
-
-	err = db.Update(func(tx *bolt.Tx) error {
-		buc, err := tx.CreateBucketIfNotExists(lbuc)
-		if err != nil { return err }
-
-		err = buc.Put(k, v)
-		if err != nil { return err }
-
-		return nil
-	})
-	return
-}
-
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	rquote := dlib.Quote{}
@@ -209,7 +195,7 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		wlog := Log{now, rwtr, cloc, quote}
 		v, err:= json.Marshal(wlog)
 		dlib.Cherr(err)
-		err = wrlog(db, []byte(ip), v)
+		err = dlib.Wrdb(db, []byte(ip), v, lbuc)
 		dlib.Cherr(err)
 		log.Printf("DEBUG: Serving %v with new data\n", string(ip))
 	} else {
