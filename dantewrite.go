@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"os"
 	"bufio"
-	"unicode"
 	"strconv"
 	"encoding/json"
 	"github.com/boltdb/bolt"
@@ -23,15 +22,10 @@ func rval(prompt string, minval, maxval int) (chint int) {
 	var tmp string
 	fmt.Printf("%v: ", prompt)
 	fmt.Scanln(&tmp)
-	for a := 0; a < len(tmp); a++ {
-		r := rune(tmp[a])
-		if !unicode.IsDigit(r) {
-			panic("Not a number")
-		}
-	}
 
 	chint, err := strconv.Atoi(tmp)
-	if chint < minval || chint > maxval {
+	if err != nil { panic("Not a number") 
+	} else if chint < minval || chint > maxval {
 		resp := fmt.Sprintf("Number not in %d-%d range", minval, maxval)
 		panic(resp)
 	}
@@ -67,7 +61,6 @@ func rtext(prompt string, eof string) ([]byte) {
 func main() {
 
 	qbuc := []byte("quotes")
-	// dbname := "./dante.db"
 	eof := "EOF"
 	cquote := dlib.Quote{}
 	rquote := dlib.Quote{}
