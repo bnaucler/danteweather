@@ -2,6 +2,9 @@
 What would Dante have said about the weather today?  
 The service retrieves IP geolocation data, a weather report and matches with quotes from Divina Comedia. Because why not?
 
+## Usage
+Use dantewrite.go to (manually) build a database, then danteserv.go to run the web service. That's all.
+
 ## Written by
 Björn Westerberg Nauclér (mail@bnaucler.se)  
 Hazel Oosterhof (hazel@studiofenix.nl)
