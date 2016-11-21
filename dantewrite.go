@@ -15,46 +15,8 @@ import (
 	"strconv"
 	"encoding/json"
 	"github.com/boltdb/bolt"
+	"github.com/bnaucler/danteweather/dlib"
 )
-
-type quote struct {
-	TempMin, TempMax int
-	WSMin, WSMax int
-	PintMin, PintMax int
-	PprobMin, PprobMax int
-	Spec int
-	Text string
-}
-
-func cherr(e error) {
-	if e != nil { panic(e) }
-}
-
-func wrdb(db *bolt.DB, k, v, cbuc []byte) (err error) {
-
-	err = db.Update(func(tx *bolt.Tx) error {
-		buc, err := tx.CreateBucketIfNotExists(cbuc)
-		if err != nil { return err }
-
-		err = buc.Put(k, v)
-		if err != nil { return err }
-
-		return nil
-	})
-	return
-}
-
-func rdb(db *bolt.DB, k, cbuc []byte) (v []byte, err error) {
-
-	err = db.View(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(cbuc)
-		if buc == nil { return fmt.Errorf("No bucket!") }
-
-		v = buc.Get(k)
-		return nil
-	})
-	return
-}
 
 func rval(prompt string, minval, maxval int) (chint int) {
 
@@ -70,14 +32,15 @@ func rval(prompt string, minval, maxval int) (chint int) {
 
 	chint, err := strconv.Atoi(tmp)
 	if chint < minval || chint > maxval {
-		panic("Number not in 0-99 range")
+		resp := fmt.Sprintf("Number not in %d-%d range", minval, maxval)
+		panic(resp)
 	}
 
-	cherr(err)
+	dlib.Cherr(err)
 	return
 }
 
-func rtext(prompt string) ([]byte) {
+func rtext(prompt string, eof string) ([]byte) {
 
 	var sbuf string
 	var bbuf string
@@ -90,7 +53,7 @@ func rtext(prompt string) ([]byte) {
 		sbuf = ""
 		scanner.Scan()
 		sbuf = scanner.Text()
-		if sbuf != "EOF" {
+		if sbuf != eof {
 			if len(bbuf) == 0 {
 				bbuf = sbuf
 			} else {
@@ -103,13 +66,14 @@ func rtext(prompt string) ([]byte) {
 
 func main() {
 
-	cbuc := []byte("quotes")
+	qbuc := []byte("quotes")
 	dbname := "./dante.db"
-	cquote := quote{}
-	rquote := quote{}
+	eof := "EOF"
+	cquote := dlib.Quote{}
+	rquote := dlib.Quote{}
 
 	db, err := bolt.Open(dbname, 0640, nil)
-	cherr(err)
+	dlib.Cherr(err)
 	defer db.Close()
 
 	fmt.Print("Enter key: ")
@@ -137,18 +101,19 @@ func main() {
 		(cquote.PintMax - cquote.PintMin) +
 		(cquote.PprobMax - cquote.PprobMin)
 
-	cquote.Text = string(rtext("Enter text - end with EOF"))
+	prompt := fmt.Sprintf("Enter text - end with %s", eof)
+	cquote.Text = string(rtext(prompt, eof))
 
 	v, err := json.Marshal(cquote)
-	cherr(err)
+	dlib.Cherr(err)
 
-	err = wrdb(db, k, v, cbuc)
-	cherr(err)
+	err = dlib.Wrdb(db, k, v, qbuc)
+	dlib.Cherr(err)
 
-	val, err := rdb(db, k, cbuc)
-	cherr(err)
+	val, err := dlib.Rdb(db, k, qbuc)
+	dlib.Cherr(err)
 
 	json.Unmarshal(val, &rquote)
 
-	fmt.Printf("Complete entry as read back from %v:\n%v:\t%+v\n", dbname, string(k), rquote)
+	fmt.Printf("Complete entry as read from %v:\n%v:\t%+v\n", dbname, string(k), rquote)
 }

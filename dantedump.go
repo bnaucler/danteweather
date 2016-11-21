@@ -11,25 +11,13 @@ import (
 	"fmt"
 	"encoding/json"
 	"github.com/boltdb/bolt"
+	"github.com/bnaucler/danteweather/dlib"
 )
 
-type quote struct {
-	TempMin, TempMax int
-	WSMin, WSMax int
-	PintMin, PintMax int
-	PprobMin, PprobMax int
-	Spec int
-	Text string
-}
-
-func cherr(e error) {
-	if e != nil { panic(e) }
-}
-
-func dbdump (db *bolt.DB, cbuc []byte, rquote quote) {
+func dbdump (db *bolt.DB, qbuc []byte, rquote *dlib.Quote) {
 
 	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(cbuc)
+		b := tx.Bucket(qbuc)
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -42,13 +30,13 @@ func dbdump (db *bolt.DB, cbuc []byte, rquote quote) {
 
 func main() {
 
-	cbuc := []byte("quotes")
+	qbuc := []byte("quotes")
 	dbname := "./dante.db"
-	rquote := quote{}
+	rquote := dlib.Quote{}
 
 	db, err := bolt.Open(dbname, 0640, nil)
-	cherr(err)
+	dlib.Cherr(err)
 	defer db.Close()
 
-	dbdump(db, cbuc, rquote)
+	dbdump(db, qbuc, &rquote)
 }

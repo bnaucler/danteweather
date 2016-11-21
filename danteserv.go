@@ -17,6 +17,7 @@ import (
 	"github.com/jessfraz/weather/forecast"
 	"github.com/jessfraz/weather/geocode"
 	"github.com/boltdb/bolt"
+	"github.com/bnaucler/danteweather/dlib"
 )
 
 var (
@@ -24,10 +25,6 @@ var (
 	qbuc = []byte("quotes")
 	lbuc = []byte("visitors")
 )
-
-func cherr(e error) {
-	if e != nil { panic(e) }
-}
 
 type Wraw struct { temp, hum, pres, ws, pint, pprob float64 }
 
@@ -40,15 +37,6 @@ type Log struct {
 	Lquote string
 }
 
-type quote struct {
-	TempMin, TempMax int
-	WSMin, WSMax int
-	PintMin, PintMax int
-	PprobMin, PprobMax int
-	Spec int
-	Text string
-}
-
 func getwtr(ip string) (cloc string, cwtr Wraw) {
 
 	var (
@@ -58,7 +46,7 @@ func getwtr(ip string) (cloc string, cwtr Wraw) {
 	)
 
 	geo, err := geocode.IPLocate(ip)
-	cherr(err)
+	dlib.Cherr(err)
 
 	cloc = fmt.Sprintf("%v, %v", geo.City, geo.CountryCode)
 
@@ -70,7 +58,7 @@ func getwtr(ip string) (cloc string, cwtr Wraw) {
 	}
 
 	fc, err := forecast.Get(fmt.Sprintf("%s/forecast", "https://geocode.jessfraz.com"), data)
-	cherr(err)
+	dlib.Cherr(err)
 
 	ftemp = fc.Currently.Temperature
 	ctemp = (ftemp - 32) * 5/9
@@ -106,7 +94,7 @@ func wtrconv(cwtr Wraw) (conv Wconv) {
 	return
 }
 
-func verquote(cquote quote, cwtrc Wconv) (bool) {
+func verquote(cquote dlib.Quote, cwtrc Wconv) (bool) {
 
 	if cwtrc.Temp < cquote.TempMin || cwtrc.Temp > cquote.TempMax { return false }
 	if cwtrc.WS < cquote.WSMin || cwtrc.WS > cquote.WSMax { return false }
@@ -115,7 +103,7 @@ func verquote(cquote quote, cwtrc Wconv) (bool) {
 	return true
 }
 
-func caldiff(cquote quote, cwtrc Wconv) (diff int) {
+func caldiff(cquote dlib.Quote, cwtrc Wconv) (diff int) {
 
 	diff = cquote.TempMin + ((cquote.TempMax - cquote.TempMin) / 2)
 	diff += cquote.WSMin + ((cquote.WSMax - cquote.WSMin) / 2)
@@ -127,9 +115,9 @@ func caldiff(cquote quote, cwtrc Wconv) (diff int) {
 	return
 }
 
-func searchdb (db *bolt.DB, cwtr Wconv, rquote quote) (string) {
+func searchdb (db *bolt.DB, cwtr Wconv, rquote dlib.Quote) (string) {
 
-	tquote := quote{}
+	tquote := dlib.Quote{}
 	mspec := 999
 	mdiff := 999
 
@@ -197,7 +185,7 @@ func wrlog(db *bolt.DB, k, v []byte) (err error) {
 
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
-	rquote := quote{}
+	rquote := dlib.Quote{}
 
 	var (
 		cloc string
@@ -220,9 +208,9 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		quote = searchdb(db, cwtr, rquote)
 		wlog := Log{now, rwtr, cloc, quote}
 		v, err:= json.Marshal(wlog)
-		cherr(err)
+		dlib.Cherr(err)
 		err = wrlog(db, []byte(ip), v)
-		cherr(err)
+		dlib.Cherr(err)
 		log.Printf("DEBUG: Serving %v with new data\n", string(ip))
 	} else {
 		cloc = clog.Lloc
@@ -246,7 +234,7 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 func main() {
 
 	db, err := bolt.Open(dbname, 0640, nil)
-	cherr(err)
+	dlib.Cherr(err)
 	defer db.Close()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -254,5 +242,5 @@ func main() {
 	})
 
 	err = http.ListenAndServe(":8959", nil)
-	cherr(err)
+	dlib.Cherr(err)
 }
