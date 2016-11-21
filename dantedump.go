@@ -31,10 +31,9 @@ func dbdump (db *bolt.DB, qbuc []byte, rquote *dlib.Quote) {
 func main() {
 
 	qbuc := []byte("quotes")
-	dbname := "./dante.db"
 	rquote := dlib.Quote{}
 
-	db, err := bolt.Open(dbname, 0640, nil)
+	db, err := bolt.Open(dlib.DBname, 0640, nil)
 	dlib.Cherr(err)
 	defer db.Close()
 

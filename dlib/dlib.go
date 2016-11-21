@@ -5,6 +5,8 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+var DBname = string("./dante.db")
+
 type Quote struct {
 	TempMin, TempMax int
 	WSMin, WSMax int

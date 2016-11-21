@@ -21,7 +21,6 @@ import (
 )
 
 var (
-	dbname = string("./dante.db")
 	qbuc = []byte("quotes")
 	lbuc = []byte("visitors")
 )
@@ -219,7 +218,7 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 func main() {
 
-	db, err := bolt.Open(dbname, 0640, nil)
+	db, err := bolt.Open(dlib.DBname, 0640, nil)
 	dlib.Cherr(err)
 	defer db.Close()
 

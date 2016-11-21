@@ -67,12 +67,12 @@ func rtext(prompt string, eof string) ([]byte) {
 func main() {
 
 	qbuc := []byte("quotes")
-	dbname := "./dante.db"
+	// dbname := "./dante.db"
 	eof := "EOF"
 	cquote := dlib.Quote{}
 	rquote := dlib.Quote{}
 
-	db, err := bolt.Open(dbname, 0640, nil)
+	db, err := bolt.Open(dlib.DBname, 0640, nil)
 	dlib.Cherr(err)
 	defer db.Close()
 
@@ -115,5 +115,5 @@ func main() {
 
 	json.Unmarshal(val, &rquote)
 
-	fmt.Printf("Complete entry as read from %v:\n%v:\t%+v\n", dbname, string(k), rquote)
+	fmt.Printf("Complete entry as read from %v:\n%v:\t%+v\n", dlib.DBname, string(k), rquote)
 }
