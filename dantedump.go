@@ -14,10 +14,10 @@ import (
 	"github.com/bnaucler/danteweather/dlib"
 )
 
-func dbdump (db *bolt.DB, qbuc []byte, rquote *dlib.Quote) {
+func dbdump (db *bolt.DB, rquote *dlib.Quote) {
 
 	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(qbuc)
+		b := tx.Bucket(dlib.Qbuc)
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -30,12 +30,11 @@ func dbdump (db *bolt.DB, qbuc []byte, rquote *dlib.Quote) {
 
 func main() {
 
-	qbuc := []byte("quotes")
 	rquote := dlib.Quote{}
 
 	db, err := bolt.Open(dlib.DBname, 0640, nil)
 	dlib.Cherr(err)
 	defer db.Close()
 
-	dbdump(db, qbuc, &rquote)
+	dbdump(db, &rquote)
 }

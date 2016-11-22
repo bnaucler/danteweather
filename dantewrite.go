@@ -60,7 +60,6 @@ func rtext(prompt string, eof string) ([]byte) {
 
 func main() {
 
-	qbuc := []byte("quotes")
 	eof := "EOF"
 	cquote := dlib.Quote{}
 	rquote := dlib.Quote{}
@@ -100,10 +99,10 @@ func main() {
 	v, err := json.Marshal(cquote)
 	dlib.Cherr(err)
 
-	err = dlib.Wrdb(db, k, v, qbuc)
+	err = dlib.Wrdb(db, k, v, dlib.Qbuc)
 	dlib.Cherr(err)
 
-	val, err := dlib.Rdb(db, k, qbuc)
+	val, err := dlib.Rdb(db, k, dlib.Qbuc)
 	dlib.Cherr(err)
 
 	json.Unmarshal(val, &rquote)

@@ -5,7 +5,11 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-var DBname = string("./dante.db")
+var (
+	DBname = string("./dante.db")
+	Qbuc = []byte("quotes")
+	Lbuc = []byte("visitors")
+)
 
 type Quote struct {
 	TempMin, TempMax int
