@@ -20,11 +20,6 @@ import (
 	"github.com/bnaucler/danteweather/dlib"
 )
 
-var (
-	qbuc = []byte("quotes")
-	lbuc = []byte("visitors")
-)
-
 type Wraw struct { temp, hum, pres, ws, pint, pprob float64 }
 
 type Wconv struct { Temp, WS, Pint, Pprob int }
@@ -121,7 +116,7 @@ func searchdb (db *bolt.DB, cwtr Wconv, rquote dlib.Quote) (string) {
 	mdiff := 999
 
 	db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(qbuc)
+		b := tx.Bucket(dlib.Qbuc)
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -150,7 +145,7 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 	clog := Log{}
 
 	err := db.View(func(tx *bolt.Tx) error {
-		buc := tx.Bucket(lbuc)
+		buc := tx.Bucket(dlib.Lbuc)
 		if buc == nil { return fmt.Errorf("No bucket!") }
 
 		v := buc.Get(k)
@@ -194,7 +189,7 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		wlog := Log{now, rwtr, cloc, quote}
 		v, err:= json.Marshal(wlog)
 		dlib.Cherr(err)
-		err = dlib.Wrdb(db, []byte(ip), v, lbuc)
+		err = dlib.Wrdb(db, []byte(ip), v, dlib.Lbuc)
 		dlib.Cherr(err)
 		log.Printf("DEBUG: Serving %v with new data\n", string(ip))
 	} else {
@@ -204,7 +199,7 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		log.Printf("DEBUG: Serving %v with data from database\n", string(ip))
 	}
 
-	fmt.Fprintf(w, "Weather for your location according to Dante:\n%s\n", 
+	fmt.Fprintf(w, "Weather for your location according to Dante:\n%s\n",
 	quote)
 
 	fmt.Fprintf(w, "In other words: weather for %v\n", cloc)
