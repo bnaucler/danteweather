@@ -5,13 +5,13 @@
 	</HEAD>
 <BODY>
 	<DIV CLASS="container">
-		<DIV CLASS="info">In other words: weather for Almere, NL
-Temperature: 3C
-Humidity: 80%
-Pressure: 1014 Hpa
-Wind speed: 3 m/s
-Precipitation intensity: 0.013
-Precipitation probability: 20%</DIV>
+		<DIV CLASS="info">In other words: weather for {{.Loc}}
+Temperature: {{.Temp}}C
+Humidity: {{.Hum}}%
+Pressure: {{.Pres}} Hpa
+Wind speed: {{.WS}} m/s
+Precipitation intensity: {{.Pint}}
+Precipitation probability: {{.Pprob}}%</DIV>
 	</DIV>
 	<DIV CLASS="link">
 		<A HREF="index.html">Return</A>

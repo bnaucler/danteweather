@@ -12,7 +12,9 @@ import (
 	"log"
 	"net"
 	"time"
+	"strconv"
 	"net/http"
+	"html/template"
 	"encoding/json"
 	"github.com/jessfraz/weather/forecast"
 	"github.com/jessfraz/weather/geocode"
@@ -20,9 +22,14 @@ import (
 	"github.com/bnaucler/danteweather/dlib"
 )
 
-type Wraw struct { temp, hum, pres, ws, pint, pprob float64 }
+type Wraw struct { Temp, Hum, Pres, WS, Pint, Pprob float64 }
 
 type Wconv struct { Temp, WS, Pint, Pprob int }
+
+type Winfo struct {
+	Loc string
+	Temp, Hum, Pres, WS, Pint, Pprob int
+}
 
 type Log struct {
 	Ltime time.Time
@@ -30,6 +37,8 @@ type Log struct {
 	Lloc string
 	Lquote string
 }
+
+type Scol struct { Col int }
 
 func getwtr(ip string) (cloc string, cwtr Wraw) {
 
@@ -57,9 +66,9 @@ func getwtr(ip string) (cloc string, cwtr Wraw) {
 	ftemp = fc.Currently.Temperature
 	ctemp = (ftemp - 32) * 5/9
 
-	cwtr = Wraw{temp: ctemp, hum: fc.Currently.Humidity,
-		pres: fc.Currently.Pressure, ws: fc.Currently.WindSpeed,
-		pint: fc.Daily.Data[0].PrecipIntensity, pprob:
+	cwtr = Wraw{Temp: ctemp, Hum: fc.Currently.Humidity,
+		Pres: fc.Currently.Pressure, WS: fc.Currently.WindSpeed,
+		Pint: fc.Daily.Data[0].PrecipIntensity, Pprob:
 		fc.Daily.Data[0].PrecipProbability}
 
 		return
@@ -67,19 +76,19 @@ func getwtr(ip string) (cloc string, cwtr Wraw) {
 
 func wtrconv(cwtr Wraw) (conv Wconv) {
 
-	conv.Temp = int(cwtr.temp + 40)
+	conv.Temp = int(cwtr.Temp + 40)
 	if conv.Temp < 0 { conv.Temp = 0 }
 	if conv.Temp > 99 { conv.Temp = 99 }
 
-	conv.WS = int(cwtr.ws * 3)
+	conv.WS = int(cwtr.WS * 3)
 	if conv.WS < 0 { conv.WS = 0 }
 	if conv.WS > 99 { conv.WS = 99 }
 
-	conv.Pint = int(cwtr.pint * 2)
+	conv.Pint = int(cwtr.Pint * 2)
 	if conv.Pint < 0 { conv.Pint = 0 }
 	if conv.Pint > 99 { conv.Pint = 99 }
 
-	conv.Pprob = int(cwtr.pprob * 10)
+	conv.Pprob = int(cwtr.Pprob * 10)
 	if conv.Pprob < 0 { conv.Pprob = 0 }
 	if conv.Pprob > 99 { conv.Pprob = 99 }
 
@@ -153,9 +162,6 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 		return nil
 	})
 
-	log.Printf("DEBUG: ctime: %v", etime)
-	log.Printf("DEBUG: clog.Ltime: %v", clog.Ltime)
-
 	if clog.Ltime.Before(etime) {
 		return Log{}, err
 	} else {
@@ -166,17 +172,17 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	rquote := dlib.Quote{}
+	scol := Scol{}
 
 	var (
 		cloc string
-		quote string
 		rwtr Wraw
 		cwtr Wconv
 	)
 
-	log.Printf("Requested path: %v\n", r.URL.Path)
+	log.Printf("DEBUG: Requested path: %v\n", r.URL.Path)
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-	if(ip == "10.0.0.20") { ip = "77.249.219.212" }
+	if(ip == "::1") { ip = "77.249.219.211" } // DEBUG
 
 	// Check database for hit on IP Within time range
 	now := time.Now()
@@ -185,30 +191,47 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	if len(clog.Lquote) == 0 || err != nil {
 		cloc, rwtr = getwtr(ip)
 		cwtr = wtrconv(rwtr)
-		quote = searchdb(db, cwtr, rquote)
-		wlog := Log{now, rwtr, cloc, quote}
+		clog.Lquote = searchdb(db, cwtr, rquote)
+		wlog := Log{now, rwtr, cloc, clog.Lquote}
 		v, err:= json.Marshal(wlog)
 		dlib.Cherr(err)
 		err = dlib.Wrdb(db, []byte(ip), v, dlib.Lbuc)
 		dlib.Cherr(err)
 		log.Printf("DEBUG: Serving %v with new data\n", string(ip))
 	} else {
-		cloc = clog.Lloc
-		rwtr = clog.Lwtr
-		quote = clog.Lquote
-		log.Printf("DEBUG: Serving %v with data from database\n", string(ip))
+		log.Printf("DEBUG: Serving %v from database\n", string(ip))
 	}
 
-	fmt.Fprintf(w, "Weather for your location according to Dante:\n%s\n",
-	quote)
+	chr, _ := strconv.Atoi(now.Format("15"))
+	cmn, _ := strconv.Atoi(now.Format("04"))
+	scol.Col = ((chr * 60) + cmn) / 5
 
-	fmt.Fprintf(w, "In other words: weather for %v\n", cloc)
-	fmt.Fprintf(w, "Temperature: %.2f\n", rwtr.temp)
-	fmt.Fprintf(w, "Humidity: %.2f\n", rwtr.hum)
-	fmt.Fprintf(w, "Pressure: %.2f\n", rwtr.pres)
-	fmt.Fprintf(w, "Wind speed: %.2f\n", rwtr.ws)
-	fmt.Fprintf(w, "Precipitation intensity: %.5f\n", rwtr.pint)
-	fmt.Fprintf(w, "Precipitation probability: %.2f\n", rwtr.pprob)
+	//TODO: Handlers for info and raw
+	if r.URL.Path == "/default.css" {
+		t, _ := template.ParseFiles("html/default.css")
+		t.Execute(w, scol)
+	} else if r.URL.Path == "/info.html" {
+		winf := Winfo{Loc: clog.Lloc, Temp: fltoint(clog.Lwtr.Temp),
+			Hum: fltoint((clog.Lwtr.Hum * 100)), Pres: fltoint(clog.Lwtr.Pres),
+			WS: fltoint(clog.Lwtr.WS), Pint: fltoint(clog.Lwtr.Pint),
+			Pprob: fltoint(clog.Lwtr.Pprob * 100)}
+		t, _ := template.ParseFiles("html/info.html")
+		t.Execute(w, winf)
+	} else if r.URL.Path == "/favicon.ico" {
+		// Do nothing
+	} else {
+		t, _ := template.ParseFiles("html/index.html")
+		t.Execute(w, clog)
+	}
+}
+
+func fltoint (input float64) int {
+
+	tstr := fmt.Sprintf("%.0f", input)
+	output, err := strconv.Atoi(tstr)
+
+	if err == nil { return output
+	} else { return 0 }
 }
 
 func main() {
@@ -216,6 +239,9 @@ func main() {
 	db, err := bolt.Open(dlib.DBname, 0640, nil)
 	dlib.Cherr(err)
 	defer db.Close()
+
+	// TODO: Build handler for static content
+	// http.Handle("/html/css/", http.StripPrefix("/html/css/", http.FileServer(http.Dir("css"))))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			handler(w, r, db)

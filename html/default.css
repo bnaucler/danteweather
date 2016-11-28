@@ -1,28 +1,28 @@
 a:link {
-	color: hsl(190, 30%, 85%);
+	color: hsl({{.Col}}, 30%, 85%);
 	text-decoration: none;
 }
 
 a:visited {
-	color: hsl(190, 30%, 85%);
+	color: hsl({{.Col}}, 30%, 85%);
 	text-decoration: none;
 }
 
 a:hover {
-	color: hsl(190, 30%, 95%);
+	color: hsl({{.Col}}, 30%, 95%);
 	text-decoration: none;
 }
 
 a:active {
-	color: hsl(190, 30%, 95%);
+	color: hsl({{.Col}}, 30%, 95%);
 	text-decoration: none;
 }
 
 body {
 	font-family: Georgia, serif;
-	background-color: hsl(190, 50%, 35%);
+	background-color: hsl({{.Col}}, 50%, 35%);
 	font-style: normal;
-	color: hsl(190, 30%, 85%);
+	color: hsl({{.Col}}, 30%, 85%);
 }
 
 div.container {
