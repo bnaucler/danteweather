@@ -92,8 +92,6 @@ func wtrconv(cwtr Wraw) (conv Wconv) {
 	if conv.Pprob < 0 { conv.Pprob = 0 }
 	if conv.Pprob > 99 { conv.Pprob = 99 }
 
-	log.Printf("DEBUG: converted values: %+v", conv)
-
 	return
 }
 
@@ -137,14 +135,18 @@ func searchdb (db *bolt.DB, cwtr Wconv, rquote dlib.Quote) (string) {
 						rquote = tquote
 						mspec = tquote.Spec
 						mdiff = cdiff
-						log.Printf("DEBUG: mspec=%d\n", mspec)
-						log.Printf("DEBUG: mdiff=%d\n", mdiff)
 					}
 				}
 			}
 		}
 		return nil
 	})
+
+	log.Printf("DEBUG: Database entry returned:\n")
+	log.Printf("DEBUG: data=%+v\n", rquote)
+	log.Printf("DEBUG: mspec=%d\n", mspec)
+	log.Printf("DEBUG: mdiff=%d\n", mdiff)
+
 	return rquote.Text
 }
 
@@ -172,7 +174,6 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	rquote := dlib.Quote{}
-	scol := Scol{}
 
 	var (
 		cloc string
@@ -180,9 +181,9 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		cwtr Wconv
 	)
 
-	log.Printf("DEBUG: Requested path: %v\n", r.URL.Path)
+	log.Printf("Requested path: %v\n", r.URL.Path)
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-	if(ip == "::1") { ip = "77.249.219.211" } // DEBUG
+	if(ip == "::1") { ip = "94.18.231.224" } // DEBUG
 
 	// Check database for hit on IP Within time range
 	now := time.Now()
@@ -191,22 +192,24 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	if len(clog.Lquote) == 0 || err != nil {
 		cloc, rwtr = getwtr(ip)
 		cwtr = wtrconv(rwtr)
-		clog.Lquote = searchdb(db, cwtr, rquote)
-		wlog := Log{now, rwtr, cloc, clog.Lquote}
-		v, err:= json.Marshal(wlog)
+		// tmpq = searchdb(db, cwtr, rquote)
+		clog = Log{now, rwtr, cloc, searchdb(db, cwtr, rquote)}
+		log.Printf("DEBUG: clog: %+v", clog)
+		v, err := json.Marshal(clog)
 		dlib.Cherr(err)
 		err = dlib.Wrdb(db, []byte(ip), v, dlib.Lbuc)
 		dlib.Cherr(err)
-		log.Printf("DEBUG: Serving %v with new data\n", string(ip))
+		log.Printf("Serving %v with new data\n", string(ip))
 	} else {
-		log.Printf("DEBUG: Serving %v from database\n", string(ip))
+		log.Printf("Serving %v from database\n", string(ip))
 	}
 
+	// 1 step of color wheel per 5 minutes
 	chr, _ := strconv.Atoi(now.Format("15"))
 	cmn, _ := strconv.Atoi(now.Format("04"))
-	scol.Col = ((chr * 60) + cmn) / 5
+	scol := Scol{Col: ((chr * 60) + cmn) / 5}
 
-	//TODO: Handlers for info and raw
+	// Yes there is a smarter way to do this
 	if r.URL.Path == "/default.css" {
 		t, _ := template.ParseFiles("html/default.css")
 		t.Execute(w, scol)
@@ -239,9 +242,6 @@ func main() {
 	db, err := bolt.Open(dlib.DBname, 0640, nil)
 	dlib.Cherr(err)
 	defer db.Close()
-
-	// TODO: Build handler for static content
-	// http.Handle("/html/css/", http.StripPrefix("/html/css/", http.FileServer(http.Dir("css"))))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			handler(w, r, db)
