@@ -1,9 +1,9 @@
-# danteweather v0.1A
+# danteweather v0.2
 What would Dante have said about the weather today?  
 The service retrieves IP geolocation data, a weather report and matches with quotes from Divina Comedia. Because why not?
 
 ## Usage
-Use dantewrite.go to (manually) build a database, then danteserv.go to run the web service. That's all. Global variables for editing are located in dlib/dlib.go
+Use dantewrite.go to (manually) build a database, then danteserv.go to run the web service. That's all. Global variables for editing are located in dlib/dlib.go. Once the database has been fully populated it will be included in the repo. (There's no point at the moment as it's filled with changing test data.)
 
 ## Written by
 Björn Westerberg Nauclér (mail@bnaucler.se)  
