@@ -111,7 +111,7 @@ func caldiff(cquote dlib.Quote, cwtrc Wconv) (diff int) {
 	diff += cquote.PintMin + ((cquote.PintMax - cquote.PintMin) / 2)
 	diff += cquote.PprobMin + ((cquote.PprobMax - cquote.PprobMin) / 2)
 
-	diff += 1 // Average of 1 lost due to divisions. Can be replaced with % if necessary
+	diff++ // Average of 1 lost due to divisions. Can be replaced with % if necessary
 
 	return
 }
@@ -174,26 +174,21 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	rquote := dlib.Quote{}
-
-	var (
-		cloc string
-		rwtr Wraw
-		cwtr Wconv
-	)
+	rwtr := Wraw{}
+	cwtr := Wconv{}
 
 	log.Printf("Requested path: %v\n", r.URL.Path)
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-	if(ip == "::1") { ip = "94.18.231.224" } // DEBUG
+	if(ip == "::1") { ip = "94.18.231.214" } // DEBUG
 
 	// Check database for hit on IP Within time range
 	now := time.Now()
 	clog, err := searchlog(db, []byte(ip), now)
 
 	if len(clog.Lquote) == 0 || err != nil {
-		cloc, rwtr = getwtr(ip)
+		clog.Lloc, rwtr = getwtr(ip)
 		cwtr = wtrconv(rwtr)
-		// tmpq = searchdb(db, cwtr, rquote)
-		clog = Log{now, rwtr, cloc, searchdb(db, cwtr, rquote)}
+		clog = Log{Ltime: now, Lwtr: rwtr, Lquote: searchdb(db, cwtr, rquote)}
 		log.Printf("DEBUG: clog: %+v", clog)
 		v, err := json.Marshal(clog)
 		dlib.Cherr(err)
@@ -204,15 +199,15 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		log.Printf("Serving %v from database\n", string(ip))
 	}
 
-	// 1 step of color wheel per 5 minutes
-	chr, _ := strconv.Atoi(now.Format("15"))
-	cmn, _ := strconv.Atoi(now.Format("04"))
-	scol := Scol{Col: ((chr * 60) + cmn) / 5}
-
 	// Yes there is a smarter way to do this
 	if r.URL.Path == "/default.css" {
+		chr, _ := strconv.Atoi(now.Format("15"))
+		cmn, _ := strconv.Atoi(now.Format("04"))
 		t, _ := template.ParseFiles("html/default.css")
-		t.Execute(w, scol)
+		t.Execute(w, Scol{Col: ((chr * 60) + cmn) / 5})
+	} else if r.URL.Path == "/raw" {
+		t, _ := template.ParseFiles("html/raw.md")
+		t.Execute(w, clog)
 	} else if r.URL.Path == "/info.html" {
 		winf := Winfo{Loc: clog.Lloc, Temp: fltoint(clog.Lwtr.Temp),
 			Hum: fltoint((clog.Lwtr.Hum * 100)), Pres: fltoint(clog.Lwtr.Pres),

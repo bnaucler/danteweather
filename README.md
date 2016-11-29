@@ -15,8 +15,8 @@ Jessie Frazelle
 The BoltDB team  
 Google
 
-# Where is the service running?
-The application is in an early alpha state; unstable and not really useful. Hence there are only temporary instances set up for specific tests. This will change once the database has been populated.
+# Where can I access the service?
+The application is in an early beta state; unstable and not really useful. Hence there are only temporary instances set up for specific tests. This will change once the database has been populated.
 
 ## License
 MIT (do whatever you want)
