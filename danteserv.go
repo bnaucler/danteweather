@@ -174,9 +174,16 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	rquote := dlib.Quote{}
+	var ip string
+
+	if r.Header.Get("X-Forwarded-For") != "" {
+		ip = r.Header["X-Forwarded-For"][0]
+		log.Printf("DEBUG: XFW ip: %v\n", ip)
+	} else {
+		ip, _, _ = net.SplitHostPort(r.RemoteAddr)
+	}
 
 	log.Printf("Requested path: %v\n", r.URL.Path)
-	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	if(ip == "::1") { ip = "77.249.219.211" } // DEBUG
 
 	// Check database for hit on IP Within time range
