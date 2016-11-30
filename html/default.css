@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css?family=Cardo');
+
 a:link {
 	color: hsl({{.Col}}, 30%, 85%);
 	text-decoration: none;
