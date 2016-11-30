@@ -174,29 +174,27 @@ func searchlog(db *bolt.DB, k []byte, etime time.Time) (Log, error) {
 func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 
 	rquote := dlib.Quote{}
-	rwtr := Wraw{}
-	cwtr := Wconv{}
 
 	log.Printf("Requested path: %v\n", r.URL.Path)
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-	if(ip == "::1") { ip = "94.18.231.214" } // DEBUG
+	if(ip == "::1") { ip = "77.249.219.211" } // DEBUG
 
 	// Check database for hit on IP Within time range
 	now := time.Now()
 	clog, err := searchlog(db, []byte(ip), now)
 
 	if len(clog.Lquote) == 0 || err != nil {
-		clog.Lloc, rwtr = getwtr(ip)
-		cwtr = wtrconv(rwtr)
-		clog = Log{Ltime: now, Lwtr: rwtr, Lquote: searchdb(db, cwtr, rquote)}
+		cloc, rwtr := getwtr(ip)
+		cwtr := wtrconv(rwtr)
+		clog = Log{now, rwtr, cloc, searchdb(db, cwtr, rquote)}
 		log.Printf("DEBUG: clog: %+v", clog)
 		v, err := json.Marshal(clog)
 		dlib.Cherr(err)
 		err = dlib.Wrdb(db, []byte(ip), v, dlib.Lbuc)
 		dlib.Cherr(err)
-		log.Printf("Serving %v with new data\n", string(ip))
+		log.Printf("Serving %v (%v) with new data\n", string(ip), clog.Lloc)
 	} else {
-		log.Printf("Serving %v from database\n", string(ip))
+		log.Printf("Serving %v (%v) from database\n", string(ip), clog.Lloc)
 	}
 
 	// Yes there is a smarter way to do this
@@ -208,7 +206,7 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 	} else if r.URL.Path == "/raw" {
 		t, _ := template.ParseFiles("html/raw.md")
 		t.Execute(w, clog)
-	} else if r.URL.Path == "/info.html" {
+	} else if r.URL.Path == "/info" {
 		winf := Winfo{Loc: clog.Lloc, Temp: fltoint(clog.Lwtr.Temp),
 			Hum: fltoint((clog.Lwtr.Hum * 100)), Pres: fltoint(clog.Lwtr.Pres),
 			WS: fltoint(clog.Lwtr.WS), Pint: fltoint(clog.Lwtr.Pint),
