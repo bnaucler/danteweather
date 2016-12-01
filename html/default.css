@@ -21,7 +21,7 @@ a:active {
 }
 
 body {
-	font-family: Georgia, serif;
+	font-family: 'Cardo', Georgia, serif;
 	background-color: hsl({{.Col}}, 50%, 35%);
 	font-style: normal;
 	color: hsl({{.Col}}, 30%, 85%);
