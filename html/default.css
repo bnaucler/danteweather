@@ -71,6 +71,7 @@ body {
 	}
 
 	.container {
+		width: 800px;
 		top:50%;
 		-ms-transform: translateX(-50%) translateY(-50%);
 		-webkit-transform: translate(-50%,-50%);
@@ -78,6 +79,8 @@ body {
 	}
 
 	.quote {
+		display: inline-block;
+		width: 80%;
 		text-align: left;
 		font-size: 2em;
 	}
@@ -86,21 +89,19 @@ body {
 		font-size: 1.5em;
 	}
 
-	.rbrack {
-		display: block;
-		float: right;
-		align-items: stretch;
-		align-self: flex-end;
-		transform: translateY(-60px) translateX(25px);
+	.lbrack {
+		display: inline-block;
+		width: 6%;
+		vertical-align: top;
+		transform: translateY(-30px);
 		font-size: 6em;
 	}
 
-	.lbrack {
-		display: block;
-		float: left;
-		align-items: stretch;
-		margin-right: 10px;
-		margin-top: -20px;
+	.rbrack {
+		display: inline-block;
+		width: 6%;
+		vertical-align: bottom;
+		transform: translateY(80px);
 		font-size: 6em;
 	}
 
