@@ -1,4 +1,9 @@
-@import url('https://fonts.googleapis.com/css?family=Cardo');
+@import url('https://fonts.googleapis.com/css?family=Cardo|Muli');
+
+aside, article, section, header, footer, nav, html, body, p, h1, h2, h3, div {
+	margin: 0;
+	padding: 0;
+}
 
 a:link {
 	color: hsl({{.Col}}, 30%, 85%);
@@ -21,40 +26,29 @@ a:active {
 }
 
 body {
-	font-family: 'Cardo', Georgia, serif;
 	background-color: hsl({{.Col}}, 50%, 35%);
 	font-style: normal;
 	color: hsl({{.Col}}, 30%, 85%);
 }
 
-div.container {
-	margin-top: 12%;
-	display: flex;
-	position: absolute
-	top: 50%;
-	right: 50%;
-	justify-content: center;
+.container {
+	position:absolute;
+	left:50%;
+	padding:15px;
 }
 
-div.quote {
-	margin-top: 0px;
-	padding: 0px;
-	font-size: 2em;
+.quote {
+	display: inline-block;
+	white-space: pre;
+}
+
+.info {
 	text-align: left;
 	display: block;
 	white-space: pre;
 }
 
-div.info {
-	margin-top: 0px;
-	padding: 0px;
-	font-size: 1.5em;
-	text-align: left;
-	display: block;
-	white-space: pre;
-}
-
-div.rblink {
+.rblink {
 	position: absolute;
 	bottom: 2%;
 	right: 2%;
@@ -62,7 +56,7 @@ div.rblink {
 	font-size: 1.1em;
 }
 
-div.lblink {
+.lblink {
 	position: absolute;
 	bottom: 2%;
 	left: 2%;
@@ -70,20 +64,98 @@ div.lblink {
 	font-size: 1.1em;
 }
 
-div.lbrack {
-	float: left;
-	align-items: stretch;
-	margin-right: 10px;
-	margin-top: -20px;
-	padding: 0;
-	font-size: 6em;
+@media screen and (min-width: 481px) {
+
+	body {
+		font-family: 'Cardo', Georgia, serif;
+	}
+
+	.container {
+		top:50%;
+		-ms-transform: translateX(-50%) translateY(-50%);
+		-webkit-transform: translate(-50%,-50%);
+		transform: translate(-50%,-50%);
+	}
+
+	.quote {
+		text-align: left;
+		font-size: 2em;
+	}
+
+	.info {
+		font-size: 1.5em;
+	}
+
+	.rbrack {
+		display: block;
+		float: right;
+		align-items: stretch;
+		align-self: flex-end;
+		transform: translateY(-60px) translateX(25px);
+		font-size: 6em;
+	}
+
+	.lbrack {
+		display: block;
+		float: left;
+		align-items: stretch;
+		margin-right: 10px;
+		margin-top: -20px;
+		font-size: 6em;
+	}
+
+	.topdot {
+		display: none
+	}
+
+	.bottomdot {
+		display: none
+	}
 }
 
-div.rbrack {
-	float: right;
-	align-items: stretch;
-	align-self: flex-end;
-	margin-bottom: -70px;
-	padding: 0;
-	font-size: 6em;
+@media screen and (max-width: 480px) {
+
+	body {
+		font-family: 'Muli', Helvetica, sans-serif;
+	}
+
+	.container {
+		display: flex;
+		justify-content: center;
+		position:absolute;
+		top:40%;
+		padding:15px;
+		-ms-transform: translateX(-50%) translateY(-40%);
+		-webkit-transform: translate(-50%,-40%);
+		transform: translate(-50%,-40%);
+	}
+
+	.quote {
+		text-align: center;
+		font-size: .8em;
+	}
+
+	.info {
+		font-size: .8em;
+	}
+
+	.rbrack {
+		display: none;
+	}
+
+	.lbrack {
+		display: none;
+	}
+
+	.topdot {
+		position: absolute;
+		top: 20%;
+		left: 50%;
+	}
+
+	.bottomdot {
+		position: absolute;
+		top: 65%;
+		left: 50%;
+	}
 }
