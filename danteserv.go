@@ -209,6 +209,7 @@ func handler(w http.ResponseWriter, r *http.Request, db *bolt.DB) {
 		chr, _ := strconv.Atoi(now.Format("15"))
 		cmn, _ := strconv.Atoi(now.Format("04"))
 		t, _ := template.ParseFiles("html/default.css")
+		w.Header().Add("Content-Type", "text/css")
 		t.Execute(w, Scol{Col: ((chr * 60) + cmn) / 5})
 	} else if r.URL.Path == "/raw" {
 		t, _ := template.ParseFiles("html/raw.md")
