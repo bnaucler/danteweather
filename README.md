@@ -18,7 +18,7 @@ The BoltDB team
 Google
 
 ## Where can I access the service?
-The server is currently running at [dante.bnaucler.se](http://dante.bnaucler.se). However, the database is yet only scarcely populated and much code optimization still needed. All in all, do not expect stability, speed nor a very accurately chosen quote.
+The project is currenly put on hold and the temporary instance shut down. It is unclear at this time if it will be completed.
 
 ## License
 MIT (do whatever you want)
